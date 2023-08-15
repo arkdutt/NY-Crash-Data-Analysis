@@ -1,9 +1,3 @@
----
-title: "Stat 240 Project Draft"
-authors: "Owen Henry, Shreya Jagadeshwaran, Scott Sheng, Ark Dutt"
-output: html_document
----
-
 <h1>New York City Crash Data Analysis</h1>
 
 <h5>By Ark Dutt, Owen Henry, Shreya Jagadeshwaran, and Scott Sheng</h5>
