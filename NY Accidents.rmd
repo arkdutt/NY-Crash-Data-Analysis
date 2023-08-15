@@ -1,0 +1,287 @@
+---
+title: "Stat 240 Project Draft"
+authors: "Owen Henry, Shreya Jagadeshwaran, Scott Sheng, Ark Dutt"
+output: html_document
+---
+
+<h1>New York City Crash Data Analysis</h1>
+
+<h5>By Ark Dutt, Owen Henry, Shreya Jagadeshwaran, and Scott Sheng</h5>
+
+<h3>Introduction:</h3>
+
+<p>During 2020, there were 5,250,837 car collisions in the U.S.[^1], 38,824 of them being fatal[^2]. In New York alone, 934 accidents were fatal in 2019, and 1,046 accidents were fatal in 2020, which is a twelve percent increase from the year before[^3]. Twelve percent does not seem like much, but that is 112 lives lost is unacceptable. With over 1,000 accidents in New York alone, it is possible to wonder how many of these accidents involve in-state drivers?</p>
+
+[^1]: <a href = "https://www.forbes.com/advisor/legal/car-accident-statistics/"> Forbes Advisor: Car Accident Statistics For 2023</a>
+
+[^2]: <a href = " https://www.nhtsa.gov/press-releases/2020-traffic-crash-data-fatalities "> NHTSA Releases 2020 Traffic Crash Data</a>
+
+[^3]: <a href = " https://www.nhtsa.gov/press-releases/2020-traffic-crash-data-fatalities "> NHTSA Releases 2020 Traffic Crash Data</a>
+
+<p>This report will analyze the number of car accidents in the state of New York by observing the proportion of accidents involving New York-registered drivers that were driving New York-registered vehicles, the proportion of accidents involving out-of-state-registered drivers driving out-of-state-registered vehicles, and a test for our hypothesis, which is that 90% of accidents in New York are caused by New York-registered drivers (in-state drivers) driving vehicles registered in New York.</p>
+
+<h3>Background:</h3>
+
+<p>The data set referenced is found in the NYC OpenData repository. The NYPD collects vehicle collision data and adds the data to this file daily. There are 3.7 million rows and 25 columns, where each row is a vehicle involved in a crash.[^4]</p>
+
+[^4]: <a href = "https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Vehicles/bm4k-52h4"> New York City Crash Data</a>
+
+<p>The columns/variables found in the data set are as follows:</p>
+
+<ul>
+
+<li>UNIQUE_ID: Unique record code for the NYC database</li>
+
+<li>COLLISION_ID: Crash identification code</li>
+
+<li>CRASH_DATE: Date of the collision</li>
+
+<li>CRASH_TIME: Time of the collision</li>
+
+<li>VEHICLE_ID: Vehicle identification number created by the NYC data system</li>
+
+<li>STATE_REGISTRATION: The state where the vehicle is registered</li>
+
+<li>VEHICLE_TYPE: Type of vehicle-based on vehicle categories (ATV, Bicycle, Car/SUV, eBike, eScooter, Truck/Bus, Motorcycle, other)</li>
+
+<li>VEHICLE_MAKE: The make of the vehicle</li>
+
+<li>VEHICLE_MODEL: The model of the vehicle</li>
+
+<li>VEHICLE_YEAR: The year that the vehicle was manufactured</li>
+
+<li>TRAVEL_DIRECTION: The direction the vehicle was traveling</li>
+
+<li>DRIVER_SEX: Gender of driver</li>
+
+<li>DRIVER_LICENSE_STATUS: Licensed, permit, or unlicensed driver</li>
+
+<li>DRIVER_LICENSE_JURISDICTION: State where driver's license was issued</li>
+
+<li>PRE_CRASH: Action that was being taken before the crash(i.e. Making a right turn)</li>
+
+<li>POINT_OF_IMPACT: Where the initial point of impact is on the car</li>
+
+<li>VEHICLE_DAMAGE: Where most of the damage occurred on the car</li>
+
+<li>VEHICLE_DAMAGE_2: Another location where the vehicle was damaged</li>
+
+<li>VEHICLE_DAMAGE_3: Another location where the vehicle was damaged</li>
+
+<li>PUBLIC_PROPERTY_DAMAGE: If the public property was damaged (Yes or No)</li>
+
+<li>PUBLIC_PROPERTY_DAMAGE_TYPE: Type of property that was damaged (i.e. Signs, fences, lights)</li>
+
+<li>CONTRIBUTING_FACTOR_1: Primary factor contributing to the collision</li>
+
+<li>CONTRIBUTING_FACTOR_2: Other factors contributing to the collision</li>
+
+</ul>
+
+<p>Due to the scope of our questions of interest, we narrowed down the variables used for our analysis. Specifically, we used these variables:</p>
+
+<ul>
+
+<li>UNIQUE_ID: We will use the ID to keep track of each unique accident data point</li>
+
+<li>STATE_REGISTRATION: The vehicle registration will be used to find the proportion of in-state drivers</li>
+
+<li>VEHICLE_TYPE: The vehicle type will be used for additional insight into what vehicles are involved in accidents</li>
+
+<li>DRIVER_LICENSE_JURISDICTION: The state in that a driver's license is registered is necessary to find the proportion of in-state accident statistics</li>
+
+</ul>
+
+<p>One of the factors that have to be considered when interpreting the data is that not all car accidents are reported. This could be because the accident had minor damage, the people involved did not want to get a police report filed for insurance purposes, or the people involved were driving without insurance which can impact whether or not they will call the police to file a report. With these accidents being left out, it will skew the data in a way that the data will show a lower amount of accidents, which can skew our calculated proportions.</p>
+
+<p>Many of the data entries in the dataset have missing values, so we had to center our questions on columns that were mostly complete. These columns may be missing data for various reasons such as an incomplete crash report, a person involved in the accident may have requested that their data is not added to the list, or a crash may have been investigated after it occurred which can impact the available evidence.</p>
+
+<p>In the STATE_REGISTRATION and DRIVER_LICENSE_JURISDICTION columns, there are some invalid values as well as Canadian province values. For this analysis, we will be filtering out these values and focusing on data that involved U.S. drivers and vehicles.</p>
+
+<p>The UNIQUE_ID column is useful because it is complete and will help us differentiate accidents. The STATE_REGISTRATION is also complete, which will be compared to the DRIVER_LICENSE_JURISDICTION. The DRIVER_LICENSE_JURISDICTION has some missing values, but it is still useful when available. The VEHICLE_TYPE, VEHICLE_MAKE, and VEHICLE_MODEL columns will also be used for comparison and are mostly complete.</p>
+
+<p>When completing our report, we are going off of some important assumptions:</p>
+
+<ul>
+
+<li>If the STATE_REGISTRATION and DRIVER_LICENSE_JURISDICTION have the same value, the car belongs to the driver, the driver is used to driving that vehicle, and that vehicle is not a rental vehicle</li>
+
+<li>If the STATE_REGISTRATION and DRIVER_LICENSE_JURISDICTION do not have the same value, the car is either a rental vehicle or is being borrowed, so the driver may not be used to that vehicle which can impact the odds that a driver gets into an accident</li>
+
+<li>All of the information is correct, and no fake driver's licenses were presented. The vehicle type, make, and model are factually correct. For example, we are assuming that there are no entries saying the vehicle type was a bicycle, the make is a Lincoln MKX, and the model is a 2020</li>
+
+</ul>
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE,
+                      warning = FALSE, error = TRUE, fig.height = 3)
+library(tidyverse)
+library(lubridate)
+library(kableExtra)
+library(broman)
+library(car)
+library(dplyr)
+nyCars = read.csv("../data/Motor_Vehicle_Collisions_-_Vehicles.csv") %>%
+  select(UNIQUE_ID, STATE_REGISTRATION, VEHICLE_TYPE, VEHICLE_MAKE, VEHICLE_MODEL, DRIVER_LICENSE_JURISDICTION)%>%
+  filter(STATE_REGISTRATION %in% state.abb, DRIVER_LICENSE_JURISDICTION %in% state.abb) %>%
+  filter(VEHICLE_TYPE != "UNKNOWN", STATE_REGISTRATION != "", VEHICLE_TYPE != "") %>%
+  rename(
+    id = UNIQUE_ID,
+    vehicle_state = STATE_REGISTRATION,
+    vehicle_type = VEHICLE_TYPE,
+    vehicle_make = VEHICLE_MAKE,
+    vehicle_model = VEHICLE_MODEL,
+    driver_state = DRIVER_LICENSE_JURISDICTION
+  )
+```
+
+<h3>Analysis:</h3>
+
+<p>To begin our analysis of the proportion of accidents caused by in-state vs. out-of-state drivers, we will look at the volume of vehicle registrations per state involved in an accident.</p>
+
+```{r, echo = FALSE, fig.height = 7}
+nyVehicleRegistrations = nyCars %>%
+  group_by(vehicle_state) %>%
+  count()
+
+ggplot(nyVehicleRegistrations, aes(x = reorder(vehicle_state, n) , y = n))+
+  geom_col(aes(fill = vehicle_state))+
+  scale_y_continuous(trans = 'log10', labels = scales::comma)+
+  xlab("Vehicle Registration State")+
+  ylab("Number of vehicles")+
+  coord_flip()+
+  theme(legend.position = "none")+
+  ggtitle("Vehicle Registrations for Each State")
+  
+  
+```
+
+<p>From this graph of vehicle registrations involved in an accident for each state, we see that the number one state is New York, followed by New Jersey, Pennsylvania, and Connecticut, which make sense due to their proximity to New York. One of the interesting details about this graph is that Florida-registered vehicles had the fourth highest involvement with accidents. This may be caused by business consultants driving from Miami to New York City for work.</p>
+
+<p>Next, we will visualize the number of drivers involved in an accident in each state.</p>
+
+```{r, echo = FALSE, fig.height = 7}
+nyDriverStates = nyCars %>%
+  group_by(driver_state) %>%
+  count() 
+
+ggplot(nyDriverStates, aes(x= reorder(driver_state, n) , y = n))+
+  geom_col(aes(fill = driver_state))+
+  scale_y_continuous(trans = 'log10', labels = scales::comma)+
+  xlab("Driver Registration State")+
+  ylab("Number of Drivers")+
+  coord_flip()+
+  theme(legend.position = "none")+
+  ggtitle("Driver Registrations for Each State")
+```
+
+<p>Similar to the graph of vehicle registrations in each state, the number one state is New York, followed by New Jersey, Pennsylvania, Connecticut, and Florida. The interesting points are found further down the chart. If you look at the driver registration chart and the vehicle registration chart, you will see that the volumes of some of the points do not match.</p>
+
+<p>Finally, we can visualize the proportion of accidents involving drivers with their license registered in New York that drove a vehicle registered in New York.</p>
+
+```{r, echo = FALSE, fig.height = 7}
+tot = nrow(nyCars)
+
+newYorkMatches = nyCars %>%
+  select(vehicle_state, driver_state) %>%
+  mutate(tot = n()) %>%
+  mutate(category = case_when(
+    (vehicle_state == "NY") & (driver_state == "NY") ~ "New York Drivers with New York Registered Vehicles",
+    (vehicle_state != "NY") & (driver_state == "NY") ~ "New York Drivers with Out-of-State Registered Vehicles",
+    (vehicle_state == "NY") & (driver_state != "NY") ~ "Out-of-State Drivers with New York Registered Vehicles",
+    (vehicle_state != "NY") & (driver_state != "NY") ~ "Out-of-State Drivers with Out-of-State Registered Vehicles"
+  )) %>%
+  group_by(category) %>%
+  summarize(prop = n()/tot) %>%
+  unique()
+
+ggplot(newYorkMatches, aes(x = reorder(category, prop), y = prop))+
+  geom_col(aes(fill = category)) +
+  coord_flip()+
+  labs(x = "Categories", y = "Percentage Presence")+
+  scale_y_continuous(labels = scales::percent)+
+  theme(axis.text.y = element_blank(), legend.title = element_blank())+
+  ggtitle("Percentage of Each Driver/Vehicle Category")
+ 
+```
+
+<p>From this graph of proportions, we can see that New York drivers with New York Registered vehicles hold the largest proportions of accidents in the NYC data.</p>
+
+<p>With our graph and data of proportions present, we can complete a hypothesis test. Our null hypothesis will be that 90% of accidents in NYC involve New York drivers operating New York vehicles. Our alternative hypothesis is that the proportion of accidents involving New York drivers operating New York vehicles is not equal to 90%.
+</p>
+
+```{r, include = FALSE, fig.height = 7}
+obs_prop = newYorkMatches %>% filter(category == "New York Drivers with New York Registered Vehicles") %>% pull(prop)
+
+hypo_prop = 0.90
+
+prop.test(x = obs_prop * tot, n = tot, p = hypo_prop)
+
+```
+
+
+<p>From our hypothesis testing in R, we found that the proportion of accidents involving New York drivers operating New York vehicles was 80%. Our 95% confidence interval did not include our null hypothesis value (90%), meaning that we can reject our null hypothesis.</p>
+
+<p>Our initial hypothesis claimed that 90% of the accidents would involve a New York driver using a New York-registered vehicle. This claim has been proven false since the results suggest that only around 80% of accidents involve in-state drivers with in-state vehicles, which is significantly different from our hypothesis.</p>
+
+<h3>Interpretation</h3>
+
+<p>Our initial hypothesis was in the right direction. However, we overestimated the true proportion of accidents involving New York-registered vehicles and New York-registered drivers by 10%. This could have been overestimated for various reasons.</p>
+
+<p>One reason that we expected less out-of-state drivers with out-of-state vehicles to be involved in accidents is because it would be reasonable for an out-of-state driver to take a taxi instead of driving their own vehicle. It is practical to take a taxi in this case because out-of-state drivers may not be used to with NYC roads and traffic.</p>
+
+<p>Another factor that could have influenced the accuracy of our calculated proportion was mentioned earlier: every accident is not reported. Minor accidents like paint scratches are more likely to happen in low-traffic areas. These areas are less likely to have out-of-state vehicles and tourists. These minor accidents would likely increase the number of accidents of New York drivers driving New York registered vehicles, so we can assume our calculated proportion of New York drivers driving New York registered vehicles is an underestimate of the true value.</p>
+
+<p>To extend our analysis, we could have looked at more states and compared their proportions of in-state drivers driving in-state vehicles to see if there was a trend of proportions. A general trend among states would increase our confidence in our calculated proportion of in-state drivers driving in-state registered vehicles.</p>
+
+<p>Another opportunity to further our research is finding the proportion of each vehicle type involved in accidents. This data is found in the dataset we used for our earlier analysis.</p>
+
+```{r, include = FALSE}
+vehicleTypes = nyCars
+vehicleTypes = vehicleTypes %>% filter(str_detect(vehicle_type, '[a-zA-Z]'))
+vehicleTypes = vehicleTypes %>% group_by(vehicle_type) %>% summarise(n=n()) %>% mutate(proportion = n / sum(n))
+
+vehicleTypes = vehicleTypes %>% filter(n>2) %>% summarize(vehicle_type=vehicle_type, n=n, proportion = n/sum(n))
+
+vehicleTypes$vehicle_type <- tolower(vehicleTypes$vehicle_type)
+
+vehicleTypes$vehicle_type <-recode(vehicleTypes$vehicle_type,"c('amb','ambu','ambulence', 'ambul', 'ambulette', 'nyc ambula', 'nys ambula', 'ems', 'ems a', 'g amb', 'ems', 'ems a', 'fdny ambul')='ambulance'")
+
+vehicleTypes$vehicle_type <-recode(vehicleTypes$vehicle_type,"c('2 dr sedan','3-door','4 dr sedan', 'sedan', 'pas', 'passe', 'pass', 'passenger', 'pc', 'sedan ', 'convertible', 'ford', 'jeep', 'taxi', 'taxi ', 'suv', 'limo', 'limou', 'chassis cab', 'carry all', 'station wagon/sport utility vehicle', 'open body')='Cars and Cabs'")
+
+vehicleTypes$vehicle_type <-recode(vehicleTypes$vehicle_type,"c('bike','bk','e-bike', 'e-bik', 'e-scooter', 'e-sco', 'minibike', 'minicycle', 'motorbike', 'motorcycle', 'motorscooter', 'moped', 'mopd', 'motor', 'scoot', 'scooter')='Bikes,Cycles,Scooters'")
+
+vehicleTypes$vehicle_type <-recode(vehicleTypes$vehicle_type,"c('armor','armored truck','beverage truck', 'box', 'box t', 'box truck', 'cargo', 'cemen', 'co', 'com', 'comm', 'com', 'com t', 'comme', 'commercial', 'deliv', 'delivery', 'delivery t', 'delv', 'dp', 'dump', 'dump truck', 'dumps', 'dumpt', 'fdny fire', 'fdny fire t', 'fire', 'fire truck', 'firetruck', 'firet', 'flat bed', 'flat', 'flat rack', 'flatb', 'flatbed', 'fedex', 'fork', 'forkl', 'forklift', 'garba', 'grabage tr', 'garbage or refusal', 'ladder tru', 'mack', 'pick', 'pick up', 'pick up tr', 'pick-', 'pick-up tr', 'pick-up truck', 'picku', 'pickup', 'pkup', 'pickup tru', 'pk', 'garbage tr', 'garbage or refuse', 'fre', 'freig', 'pickup with mounted camper', 'tow', 'tow t', 'tow truck', 'tower', 'tow truck / wrecker', 'truck', 'uhaul', 'ups truck', 'u-hau', 'usps', 'us po', 'usps truck', 'trk', 'trc', 'tr', 'tk', 'posta', 'postal tru', 'food', 'glass rack', 'lunch wagon', 'mail', 'mini', 'miniv', 'rv', 'sanitation', 'sanit', 'stake or rack', 'tank', 'tanker', 'tanke', 'trail', 'trailer', 'trailor', 'trl', 'trlr', 'refrigerated van', 'trac', 'tract', 'track', 'tractor', 'tractor tr', 'ut', 'util', 'utili', 'utility tr', 'utility ve', 'van', 'utility van', 'van t', 'van camper', 'work', 'work van', 'van/t', 'van truck', 'utility', 'vanette', 'tractor truck diesel', 'tractor truck gasoline', 'concrete mixer', 'backh', 'back', 'fdny truck', 'fdny firet', 'gator', 'sprin', 'sprinter v', 'wagon', 'well driller', 'snow plow', 'fire engin', 'bulk agriculture', 'crane', 'lift boom')='Trucks, Vans, Utility vehicles'")
+
+vehicleTypes$vehicle_type <-recode(vehicleTypes$vehicle_type,"c('bus','schoo','school bus', 'scl', 'mta', 'mta b', 'mta bus')='Buses'")
+
+vehicleTypes = vehicleTypes %>% mutate(vehicle_type = case_when(vehicle_type == 'Buses' ~ 'Buses', vehicle_type == 'ambulance' ~ 'Ambulance', vehicle_type == 'Bikes,Cycles,Scooters' ~ 'Bikes, Cycles, Scooters', vehicle_type == 'Trucks, Vans, Utility vehicles' ~ 'Trucks, Vans, Utility vehicles', vehicle_type == 'Cars and Cabs' ~ 'Cars and Cabs', TRUE ~ 'Other'))
+
+vehicleTypes = vehicleTypes %>% group_by(vehicle_type) %>% summarise(n=sum(n))
+```
+
+```{r, echo = FALSE, fig.height = 7}
+
+ggplot(vehicleTypes, aes(x = reorder(vehicle_type, n), y = n)) +
+  geom_col(aes(fill = vehicle_type)) +
+  coord_flip()+
+  xlab("Type of vehicle") +
+  ylab("Number of accidents") +
+  ggtitle("Number of accidents each type of vehicle is involved in")+
+  scale_y_continuous(labels = scales::comma)+
+  theme(axis.text.y = element_blank(), legend.title = element_blank())
+
+```
+
+<p>From the vehicle type data available, we can see that most accidents involve cars and cabs, with over 1,250,000 accidents. This could be because cars and cabs are more prevalent in the streets than other vehicle types, increasing the probability of accidents they could be involved in. </p>
+
+<p>Additionally, we could look at driver behavior. For example, we can look at drivers who had a high BAC (blood alcohol concentration), which increases the chances of being in an accident. There may also be cases where drivers go above the speed limit, increasing the chances of accidents. If the CONTRIBUTING_FACTOR columns were complete, we could accurately analyze these causes and influences on accidents.</p>
+
+<p>Information on the location and time of day accidents could be collected to provide insight into specific areas or times when accidents are more likely to occur, enabling policymakers to make informed decisions on law and policy.</p>
+
+<p>In the future, we could also investigate the proportion of demographic variables in vehicle accidents in the state of New York. For example, we could look into the age, gender, and driving experience of drivers involved in accidents.</p>
+
+
+<p>In conclusion, the drivers from New York driving New York-registered vehicles were involved in 80% of the accidents logged in the NYC database. Our hypothesis, 90% of accidents involving New York drivers with New York registered vehicles, was greater than the calculated proportion by 10%, but we believe that the calculated proportion is underestimated since all accidents are not reported and logged in the database. We can further our research by looking into the proportion of vehicle types involved with accidents, analyzing demographic information of drivers involved in accidents, and looking into location and time data to help policymakers make effective laws.</p>
+
+<h3>References:</h3>
